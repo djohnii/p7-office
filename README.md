@@ -1,8 +1,9 @@
 
 # r7-office
-deploy r7-office with ansible ( Redos 7.3.3, Centos 7)
+Установка  r7-office Middle используя ansible  на операционных системах Linux( Redos 7.3.3, Centos 7)
 # Описание
 Скрипт для установки r7-office используя ansible.
+
 # Требования
 OS: Centos7 or Redos 7.3.3
 Python version 3.*
