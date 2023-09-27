@@ -1,7 +1,4 @@
 
-# - name: Create Application DB User
-#   mysql_user: name=test password=Welcome1 priv='*.*:ALL' host='localhost' state='present'
-
 - name: Start the mysql services
   service:
     name: "{{ mysql_service }}"
