@@ -1,7 +1,9 @@
 
 # r7-office middle
-Установка  r7-office Middle используя ansible  на операционных системах Linux( Redos 7.3.3, Centos 7)
+ 
 
+В этой статье рассмотрим установку программного продукта Р7 Сервер Базовый в архитектуре Middle используя  ansible  на операционных системах Linux( Redos 7.3.3, Centos 7) 
+![Alt text](image.png)
 # Требования
 
 Операционная система Centos 7 или Redos 7.3.3 
