@@ -1,0 +1,100 @@
+---
+- name: change hostname
+  ansible.builtin.command: hostnamectl set-hostname "{{ server_name }}"
+
+- name: restart firewalld
+  ansible.builtin.command: systemctl restart firewalld.service
+- name: enable firewalld
+  ansible.builtin.command: systemctl enable firewalld.service
+
+- name: stop ahttpd
+  ansible.builtin.command: systemctl stop ahttpd
+- name: stop httpd2
+  ansible.builtin.command: systemctl stop httpd2
+
+- name: start monoserve
+  ansible.builtin.command: systemctl start monoserve.service
+- name: enable monoserve
+  ansible.builtin.command: systemctl enable monoserve.service
+
+- name: start monoserveApiSystem
+  ansible.builtin.command: systemctl start monoserveApiSystem.service
+- name: enable monoserveApiSystem
+  ansible.builtin.command: systemctl enable monoserveApiSystem.service
+
+- name: start r7-officeTelegram
+  ansible.builtin.command: systemctl start r7-officeTelegram.service
+- name: enable r7-officeTelegram
+  ansible.builtin.command: systemctl enable r7-officeTelegram.service
+
+- name: start r7-officeRadicale
+  ansible.builtin.command: systemctl start r7-officeRadicale.service
+- name: enable r7-officeRadicale
+  ansible.builtin.command: systemctl enable r7-officeRadicale.service
+
+- name: start r7-officeSocketIO
+  ansible.builtin.command: systemctl start r7-officeSocketIO.service
+- name: enable r7-officeSocketIO
+  ansible.builtin.command: systemctl enable r7-officeSocketIO.service
+
+- name: start start r7-officeThumb
+  ansible.builtin.command: systemctl start start r7-officeThumb.service
+- name: enable start r7-officeThumb
+  ansible.builtin.command: systemctl enable start r7-officeThumb.service
+
+- name: start r7-officeUrlShortener
+  ansible.builtin.command: systemctl start r7-officeUrlShortener.service
+- name: enable r7-officeUrlShortener
+  ansible.builtin.command: systemctl enable r7-officeUrlShortener.service
+
+- name: start r7-officeBackup
+  ansible.builtin.command: systemctl start r7-officeBackup.service
+- name: enable r7-officeBackup
+  ansible.builtin.command: systemctl enable r7-officeBackup.service
+
+- name: start r7-officeFeed
+  ansible.builtin.command: systemctl start r7-officeFeed.service
+- name: enable r7-officeFeed
+  ansible.builtin.command: systemctl enable r7-officeFeed.service
+
+- name: start r7-officeIndex
+  ansible.builtin.command: systemctl start r7-officeIndex.service
+- name: enable r7-officeIndex
+  ansible.builtin.command: systemctl enable r7-officeIndex.service
+
+- name: start r7-officeNotify
+  ansible.builtin.command: systemctl start r7-officeNotify.service
+- name: enable r7-officeNotify
+  ansible.builtin.command: systemctl enable r7-officeNotify.service
+
+- name: start r7-officeMailAggregator
+  ansible.builtin.command: systemctl start r7-officeMailAggregator.service
+- name: enable r7-officeMailAggregator
+  ansible.builtin.command: systemctl enable r7-officeMailAggregator.service
+
+- name: start r7-officeMailWatchdog
+  ansible.builtin.command: systemctl start r7-officeMailWatchdog.service
+- name: enable r7-officeMailWatchdog
+  ansible.builtin.command: systemctl enable r7-officeMailWatchdog.service
+
+- name: start r7-officeMailCleaner
+  ansible.builtin.command: systemctl start r7-officeMailCleaner.service
+- name: enable r7-officeMailCleaner
+  ansible.builtin.command: systemctl enable r7-officeMailCleaner.service
+
+- name: start r7-officeRadicale
+  ansible.builtin.command: systemctl start r7-officeRadicale.service
+- name: enable r7-officeRadicale
+  ansible.builtin.command: systemctl enable r7-officeRadicale.service
+
+- name: start r7-officeStorageMigrate
+  ansible.builtin.command: systemctl start r7-officeStorageMigrate.service
+- name: enable r7-officeStorageMigrate
+  ansible.builtin.command: systemctl enable monor7-officeStorageMigrateserve.service
+
+- name: start r7-officeStorageEncryption
+  ansible.builtin.command: systemctl start r7-officeStorageEncryption.service
+- name: enable r7-officeStorageEncryption
+  ansible.builtin.command: systemctl enable r7-officeStorageEncryption.service
+
+

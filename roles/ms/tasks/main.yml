@@ -1,0 +1,73 @@
+
+# - name: Create Application DB User
+#   mysql_user: name=test password=Welcome1 priv='*.*:ALL' host='localhost' state='present'
+
+- name: Start the mysql services
+  service:
+    name: "{{ mysql_service }}"
+    state: started
+    enabled: yes
+# Создаем пользователя для slave
+- name: Create the replication users for slave
+  mysql_user:
+    name: "{{ item.name }}"
+    host: "%"
+    password: "{{ item.pass }}" #"{{ item.pass|default('verystrong') }}"
+    priv: "*.*:REPLICATION SLAVE"
+    state: present
+  with_items:
+    - "{{ mysql_repl_user }}"
+  when: mysql_repl_role == 'master'
+# Создаем пользователя для репликации с Корпоративным сервером
+- name: Create the replication users for cs
+  mysql_user:
+    name: "{{ item.name }}"
+    host: "%"
+    password: "{{ item.pass }}"
+    priv: "*.*:ALL"
+    state: present
+  with_items:
+    - "{{ mysql_cs_repl }}"
+  when: mysql_repl_role == 'master'
+#REPLICA Slave
+# Получаем данные из master
+- name: Get the current master servers replication status
+  mysql_replication:
+    mode: getprimary
+  delegate_to: master_node
+  register: repl_stat
+# Останавливаем репликацию на slave
+- name: Query stop replica
+  community.mysql.mysql_query:
+    login_user: "{{ mysql_root_db_user }}"
+    login_password: "{{ mysql_root_db_pass }}"
+    query: >
+      stop replica
+  when: mysql_repl_role == 'slavedb'
+# Настраиваем репликацию на slave
+- name: Change the master in slave to start the replication
+  mysql_replication:
+    mode: changeprimary
+    master_host: "{{ hostvars['master_node']['ansible_host'] }}"
+    master_log_file: "{{ repl_stat.File }}"
+    master_log_pos: "{{ repl_stat.Position }}"
+    master_user: "{{ item.name }}"
+    master_password: "{{ mysql_root_db_pass }}"
+  with_items:
+    - "{{ mysql_repl_user }}"
+  when: mysql_repl_role == 'slavedb' 
+# Запускаем репликацию
+- name: Run start replica 
+  mysql_replication:
+    mode: startreplica
+  when:  mysql_repl_role == "slavedb"
+# Запускаем репликацию (повтор)
+- name: Query start replica (duble)
+  community.mysql.mysql_query:
+    login_user: "{{ mysql_root_db_user }}"
+    login_password: "{{ mysql_root_db_pass }}"
+    query: >
+      start replica
+  when: mysql_repl_role == 'slavedb'
+
+

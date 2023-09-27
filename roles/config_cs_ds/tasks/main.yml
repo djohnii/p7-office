@@ -1,0 +1,103 @@
+---
+#  Документ сервер
+#  Файл /local.json
+- name: change /etc/r7-office/documentserver/local.json Authorization
+  when: mysql_repl_role == "ds"
+  replace:
+      path: /etc/r7-office/documentserver/local.json 
+      regexp: '"Authorization"' 
+      replace: '"AuthorizationJwt"'
+- name: change /etc/r7-office/documentserver/local.json inbox
+  when: mysql_repl_role == "ds"
+  replace:
+      path: /etc/r7-office/documentserver/local.json 
+      regexp: '"inbox": false,' 
+      replace: '"inbox": true,'
+- name: change /etc/r7-office/documentserver/local.json  outbox
+  when: mysql_repl_role == "ds"
+  replace:
+      path: /etc/r7-office/documentserver/local.json 
+      regexp: '"outbox": false' 
+      replace: '"outbox": true'
+- name: change /etc/r7-office/documentserver/local.json browser
+  when: mysql_repl_role == "ds"
+  replace:
+      path: /etc/r7-office/documentserver/local.json 
+      regexp: '"browser": false' 
+      replace: '"browser": true'
+- name: change /etc/r7-office/documentserver/local.json secret
+  when: mysql_repl_role == "ds"
+  replace:
+      path: /etc/r7-office/documentserver/local.json 
+      regexp: '          "string": "secret"' 
+      replace: '          "string": "{{ DS_password }}"'
+# Перезапускаем сервис 
+- name: restart ds 
+  when: mysql_repl_role == "ds"
+  service:
+    name: "{{ item }}"
+    state: restarted
+  with_items:
+  - "ds-converter.service"
+  - "ds-docservice.service"
+  - "ds-metrics.service"
+
+# # ON CS
+#  Файл /web.appsettings.config 
+- name: change web.appsettings.config  secret
+  when: mysql_repl_role == "cs"
+  lineinfile:
+      path: /var/www/r7-office/WebStudio/web.appsettings.config
+      regexp: '<add key="files.docservice.secret" value="' 
+      line: '  <add key="files.docservice.secret" value="{{ DS_password }}" />'
+- name: PUBLIC change web.appsettings.config  
+  when: mysql_repl_role == "cs"
+  lineinfile:
+      path: /var/www/r7-office/WebStudio/web.appsettings.config
+      regexp: '<add key="files.docservice.url.public" value="' 
+      line: '  <add key="files.docservice.url.public" value="http://{{ ds }}/" />'
+- name: INTERNAL change web.appsettings.config
+  when: mysql_repl_role == "cs"    
+  lineinfile:
+      path: /var/www/r7-office/WebStudio/web.appsettings.config
+      regexp: '<add key="files.docservice.url.internal" value="' 
+      line: '  <add key="files.docservice.url.internal" value="" />'
+- name: PORTAL change web.appsettings.config
+  when: mysql_repl_role == "cs"
+  lineinfile:
+      path: /var/www/r7-office/WebStudio/web.appsettings.config
+      regexp: '<add key="files.docservice.url.portal" value="' 
+      line: '  <add key="files.docservice.url.portal" value="http://{{ cs }}/" />'
+# Файл /TeamLabSvc.exe.config
+- name: SECRET change web.appsettings.config  
+  when: mysql_repl_role == "cs"
+  lineinfile:
+      path: /var/www/r7-office/Services/TeamLabSvc/TeamLabSvc.exe.config
+      regexp: '<add key="files.docservice.secret" value="' 
+      line: '    <add key="files.docservice.secret" value="{{ DS_password }}" />'
+- name: PUBLIC change web.appsettings.config 
+  when: mysql_repl_role == "cs"
+  lineinfile:
+      path: /var/www/r7-office/Services/TeamLabSvc/TeamLabSvc.exe.config
+      regexp: '<add key="files.docservice.url.public" value="' 
+      line: '    <add key="files.docservice.url.public" value="http://{{ ds }}/" />'
+- name: INTERNAL change web.appsettings.config 
+  when: mysql_repl_role == "cs"
+  lineinfile:
+      path: /var/www/r7-office/Services/TeamLabSvc/TeamLabSvc.exe.config
+      regexp: '<add key="files.docservice.url.internal" value="' 
+      line: '    <add key="files.docservice.url.internal" value="" />'
+- name: PORTAL change web.appsettings.config  
+  when: mysql_repl_role == "cs"
+  lineinfile:
+      path: /var/www/r7-office/Services/TeamLabSvc/TeamLabSvc.exe.config
+      regexp: '<add key="files.docservice.url.portal" value="' 
+      line: '    <add key="files.docservice.url.portal" value="http://{{ cs }}/" />'
+# Перезапускаем сервис
+- name: restart systemctl restart monoserve.service
+  when: mysql_repl_role == "cs"
+  service:
+    name: monoserve.service
+    state: restarted
+
+    

@@ -1,0 +1,238 @@
+#!/bin/bash
+
+DIR=/var/www/r7-office
+LOG_DIR="/var/log/r7-office/"
+SERVICES_DIR="${DIR}/Services"
+CONF=$DIR/WebStudio/web.connections.config
+MYSQL=""
+DB_HOST="{{ DB_HOST }}"
+DB_NAME="{{ DB_NAME }}"
+DB_USER="{{ DB_USER }}"
+DB_PWD="{{ DB_PWD }}"
+[ -e $CONF ] || { echo "Configuration file not found at path $CONF"; exit 1; }
+[ $(id -u) -ne 0 ] && { echo "Root privileges required"; exit 1; }
+
+restart_services() {
+	echo "Restarting services... "
+
+	for SVC in monoserve monoserveApiSystem nginx r7-officeTelegram r7-officeRadicale r7-officeSocketIO r7-officeThumb r7-officeUrlShortener r7-officeWebDav r7-officeBackup r7-officeFeed r7-officeIndex r7-officeNotify r7-officeMailAggregator r7-officeMailWatchdog r7-officeMailCleaner r7-officeMailImap r7-officeStorageMigrate r7-officeStorageEncryption r7-officeThumbnailBuilder r7-officeSsoAuth r7-officeFilesTrashCleaner r7-officeMailImap r7-officeWebDav god
+	do
+		systemctl enable $SVC.service
+		systemctl restart $SVC.service
+
+		echo "$SVC.service "
+	done
+	echo "OK"
+}
+
+
+
+save_db_params() {
+	CONN_STR="Server=$DB_HOST;Database=$DB_NAME;User ID=$DB_USER;Password=$DB_PWD;Pooling=true;Character Set=utf8;AutoEnlist=false;SSL Mode=none;AllowPublicKeyRetrieval=true;Connection Timeout=30;Maximum Pool Size=300;"
+
+	if [ -d "$DIR" ]; then
+		binDirs=("WebStudio" "ApiSystem" "Services/TeamLabSvc")
+
+		for i in "${!binDirs[@]}";
+		do
+			find "$DIR/${binDirs[$i]}" -type f -name "*.[cC]onfig" -exec sed -i "s/connectionString=.*/connectionString=\"${CONN_STR}\" providerName=\"MySql.Data.MySqlClient\"\/>/" {} \;
+		done
+				
+		find "$DIR/Services/ASC.UrlShortener/config" -type f -name "*.json" -exec sed -i \
+		-e "s!\(\"host\":\).*,!\1 \"${DB_HOST}\",!" \
+		-e "s!\(\"user\":\).*,!\1 \"${DB_USER}\",!" \
+		-e "s!\(\"password\":\).*,!\1 \"${DB_PWD//!/\\!}\",!" \
+		-e "s!\(\"database\":\).*!\1 \"${DB_NAME}\"!" {} \;	
+
+		sed -i "s!\(\"connectionString\":\).*,!\1 \"${CONN_STR//!/\\!}\",!" /etc/r7-office/communityserver/appsettings.production.json
+	fi
+}
+
+establish_db_conn() {
+	echo -n "Trying to establish MySQL connection... "
+
+	command -v mysql >/dev/null 2>&1 || { echo "MySQL client not found"; exit 1; }
+
+	MYSQL="mysql -h$DB_HOST -u$DB_USER"
+	if [ -n "$DB_PWD" ]; then
+		MYSQL="$MYSQL -p$DB_PWD"
+	fi
+
+	$MYSQL -e ";" >/dev/null 2>&1
+	ERRCODE=$?
+	if [ $ERRCODE -ne 0 ]; then
+		systemctl mysqld start >/dev/null 2>&1
+		$MYSQL -e ";" >/dev/null 2>&1 || { echo "FAILURE"; exit 1; }
+	fi
+
+	echo "OK"
+}
+
+function mysql_check_connection() {
+	while ! $MYSQL -e ";" >/dev/null 2>&1; do
+    		sleep 1
+	done
+}
+
+execute_db_scripts() {
+
+	local CNF_PATH="/etc/my.cnf";
+	local CNF_SERVICE_PATH="/usr/lib/systemd/system/mysqld.service";
+		
+	if ! grep -q "\[mysqld\]" ${CNF_PATH}; then
+			CNF_PATH="/etc/my.cnf.d/server.cnf";
+
+			if ! grep -q "\[mysqld\]" ${CNF_PATH}; then
+				exit 1;
+			fi
+	fi 
+
+	if ! grep -q "\[Unit\]" ${CNF_SERVICE_PATH}; then
+			CNF_SERVICE_PATH="/lib/systemd/system/mysqld.service";
+
+			if ! grep -q "\[Unit\]" ${CNF_SERVICE_PATH}; then
+				CNF_SERVICE_PATH="/lib/systemd/system/mariadb.service";
+				
+				if ! grep -q "\[Unit\]" ${CNF_SERVICE_PATH}; then 
+					exit 1;
+				fi
+			fi
+	fi 
+	
+	sed '/skip-networking/d' -i ${CNF_PATH} || true # ignore errors
+	
+	if ! grep -q "^sql_mode" ${CNF_PATH}; then
+		sed "/\[mysqld\]/a sql_mode = 'NO_ENGINE_SUBSTITUTION'" -i ${CNF_PATH} # disable new STRICT mode in mysql 5.7
+	else
+		sed "s/sql_mode.*/sql_mode = 'NO_ENGINE_SUBSTITUTION'/" -i ${CNF_PATH} || true # ignore errors
+	fi
+
+	if ! grep -q "^max_connections"  ${CNF_PATH}; then
+		sed '/\[mysqld\]/a max_connections = 1000' -i ${CNF_PATH}
+	else
+		sed "s/max_connections.*/max_connections = 1000/" -i ${CNF_PATH} || true # ignore errors
+	fi
+
+	if ! grep -q "^group_concat_max_len"  ${CNF_PATH}; then
+		sed '/\[mysqld\]/a group_concat_max_len = 2048' -i ${CNF_PATH}
+	else
+		sed "s/group_concat_max_len.*/group_concat_max_len = 2048/" -i ${CNF_PATH} || true # ignore errors
+	fi
+
+	if ! grep -q "^max_allowed_packet"  ${CNF_PATH}; then
+		sed '/\[mysqld\]/a max_allowed_packet = 1048576000' -i ${CNF_PATH}
+	else
+		sed "s/max_allowed_packet.*/max_allowed_packet = 1048576000/" -i ${CNF_PATH} || true # ignore errors
+	fi
+
+	if ! grep -q "^character_set_server"  ${CNF_PATH}; then
+		sed '/\[mysqld\]/a character_set_server = utf8' -i ${CNF_PATH}
+	else
+		sed "s/character_set_server.*/character_set_server = utf8/" -i ${CNF_PATH} || true # ignore errors
+	fi
+	
+	if ! grep -q "^collation_server"  ${CNF_PATH}; then
+		sed '/\[mysqld\]/a collation_server = utf8_general_ci' -i ${CNF_PATH}
+	else
+		sed "s/collation_server.*/collation_server = utf8_general_ci/" -i ${CNF_PATH} || true # ignore errors
+	fi
+	
+	if ! grep -q "^default-authentication-plugin"  ${CNF_PATH}; then
+		sed '/\[mysqld\]/a default-authentication-plugin = mysql_native_password' -i ${CNF_PATH}
+	else
+		sed "s/default-authentication-plugin.*/default-authentication-plugin = mysql_native_password/" -i ${CNF_PATH} || true # ignore errors
+	fi
+	
+	if ! grep -q "^interactive_timeout"  ${CNF_PATH}; then
+		sed '/\[mysqld\]/a interactive_timeout = 900' -i ${CNF_PATH}
+	else
+		sed "s/interactive_timeout.*/interactive_timeout = 900/" -i ${CNF_PATH} || true # ignore errors
+	fi
+	
+	if ! grep -q "^wait_timeout"  ${CNF_PATH}; then
+		sed '/\[mysqld\]/a wait_timeout = 900' -i ${CNF_PATH}
+	else
+		sed "s/wait_timeout.*/wait_timeout = 900/" -i ${CNF_PATH} || true # ignore errors
+	fi
+		
+	if ! grep -q "^LimitNOFILE"  ${CNF_SERVICE_PATH}; then
+		sed '/\[Service\]/a LimitNOFILE = infinity' -i ${CNF_SERVICE_PATH}
+	else
+		sed "s/LimitNOFILE.*/LimitNOFILE = infinity/" -i ${CNF_SERVICE_PATH} || true # ignore errors
+	fi
+
+	if ! grep -q "^LimitMEMLOCK"  ${CNF_SERVICE_PATH}; then
+		sed '/\[Service\]/a LimitMEMLOCK = infinity' -i ${CNF_SERVICE_PATH}
+	else
+		sed "s/LimitMEMLOCK.*/LimitMEMLOCK = infinity/" -i ${CNF_SERVICE_PATH} || true # ignore errors
+	fi
+	
+	systemctl daemon-reload
+	systemctl stop mysqld
+	systemctl restart mysqld
+
+	mysql_check_connection
+	
+	if [ "$DB_USER" = "root" ] && [ ! "$(mysql -V | grep ' 5.5.')" ]; then
+	   # allow MySql.Data.dll connect via mysql_native_password with root and empty password
+	   $MYSQL -D "mysql" -e "update user set plugin='mysql_native_password' where user='root';ALTER USER '${DB_USER}'@'localhost' IDENTIFIED WITH mysql_native_password BY '${DB_PWD}';"
+	fi
+	
+	DB_TABLES_COUNT=$($MYSQL --silent --skip-column-names -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${DB_NAME}'");
+	
+	if [ "${DB_TABLES_COUNT}" -eq "0" ]; then
+		echo "Installing MySQL database... "
+		
+		$MYSQL -e 'CREATE DATABASE IF NOT EXISTS `'$DB_NAME'` CHARACTER SET utf8 COLLATE `utf8_general_ci`;'	
+		$MYSQL "$DB_NAME" < $DIR/Sql/r7-office.sql
+		$MYSQL "$DB_NAME" < $DIR/Sql/r7-office.data.sql
+	else
+		echo "Upgrading MySQL database... "
+
+		for i in $(ls $DIR/Sql/r7-office.upgrade*); do
+				$MYSQL "$DB_NAME" < ${i};
+		done	
+				
+		APP_INDEX_DIR="${DIR}/Index/v7.16.3/"
+
+		if [ ! -d "$APP_INDEX_DIR/nodes" ]; then
+			$MYSQL "$DB_NAME" -e "TRUNCATE webstudio_index";
+		fi
+	fi
+}
+
+setup_enterprise(){
+	[ -a /etc/nginx/conf.d/default.conf ] && mv /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.old
+
+	sed -i '1d' /etc/logrotate.d/nginx
+	sed '1 i\/var/log/nginx/*.log /var/log/r7-office/nginx.*.log {' -i /etc/logrotate.d/nginx
+
+	systemctl restart mysqld >/dev/null 2>&1 || true # ignore errors
+	mysql_check_connection
+	
+	LICENSE_FILE_PATH="/var/www/r7-office/Data/license.lic";
+	
+	if rpm -q r7-office-documentserver-ee; then
+
+	
+	if [ ! -f ${LICENSE_FILE_PATH} ]; then
+		mysql --silent -h ${DB_HOST} -u ${DB_USER} --password=${DB_PWD} -D "$DB_NAME" <<EOF || true
+INSERT IGNORE INTO tenants_quota (tenant, name, max_file_size, max_total_size, active_users, features) \
+SELECT -1000, 'start_trial', max_file_size, max_total_size, active_users, CONCAT(features, ',trial')
+FROM tenants_quota
+WHERE tenant = -1;
+INSERT IGNORE INTO tenants_tariff (id, tenant, tariff, stamp) VALUES ('1000','-1', '-1000', NOW() + INTERVAL 30 DAY);
+EOF
+
+	fi
+	
+	fi
+
+}
+
+
+establish_db_conn || exit $?
+execute_db_scripts || exit $?
+save_db_params
+setup_enterprise
+restart_services

@@ -1,0 +1,33 @@
+---
+packagesCentos:
+  - "firewalld"
+
+packagesRedOS:
+  - mariadb-common
+  - mariadb-config
+  - mariadb-libs
+  - mariadb-connector-c
+  - mariadb-connector-c-config
+
+packagesAlt:
+  - "MySQL-server"
+  - "mariadb-server"
+  - "libmariadb3"
+  
+packagesRedOS72:
+  - curl
+
+packagesAsrta:
+  - debian-archive-keyring
+  - dirmngr
+  - python3-setuptools
+  - apt-transport-https
+  - ca-certificates
+
+packagesDeb:
+  - python3-setuptools
+
+public_key : ansible
+inventory_dir: ./inventory/hosts
+ansible_port : 2235
+ansible_user: root

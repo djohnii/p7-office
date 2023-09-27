@@ -1,0 +1,12 @@
+
+[cs]
+cs_1 ansible_host= ansible_port= ansible_user=root
+
+[ds]
+ds_node ansible_host= ansible_port= ansible_user=root
+
+[master_db]
+master_node ansible_host= ansible_port= ansible_user=root
+
+[slave_db]
+slave_node ansible_host= ansible_port= ansible_user=root
