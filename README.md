@@ -1,50 +1,88 @@
 
-# r7-office
+# r7-office middle
 Установка  r7-office Middle используя ansible  на операционных системах Linux( Redos 7.3.3, Centos 7)
-# Описание
-Скрипт для установки r7-office используя ansible.
 
 # Требования
-OS: Centos7 or Redos 7.3.3
-Python version 3.*
-Хараеткиристики хоста CS :
-Оперативная память: 12GB+
-Размер свободного пространства: 40gb+
+OS: Centos7 or Redos 7.3.3 \
+Python version 3.* \
+Для корпоративного сервера:
+- Процессор: рекомендуется от 6 ядер \
+- Оперативная память: рекомендуется от 12 Гб \
+- Свободное место на жестком диске: рекомендуется от 50 Гб 
 # Перед тем как запустить
-Для запуска скрипта необходимо заполнить переменные которые находятся в inventory/group_vars/all/main.yml и inventory/hosts
-## inventory/hosts 
+Для запуска скрипта необходимо заполнить переменные которые находятся:
+- inventory/hosts
+- inventory/group_vars/all/main.yml 
+## 1. Заполняем переменные в inventory/hosts 
  ```
 [cs]
-cs_1 ansible_host=<IP> ansible_port=<ssh_port> ansible_user=<ssh_user>
+cs_1 ansible_host=192.168.1.1 ansible_port=22 ansible_user=ssh_user
 [ds]
-ds_node ansible_host=<IP> ansible_port=<ssh_port> ansible_user=<ssh_user>
+ds_node ansible_host=192.168.1.2 ansible_port=22 ansible_user=ssh_user
 [master_db]
-master_node ansible_host=<IP> ansible_port=<ssh_port> ansible_user=<ssh_user>
+master_node ansible_host=192.168.1.3 ansible_port=22 ansible_user=ssh_user
 [slave_db]
-slave_node ansible_host=<IP> ansible_port=<ssh_port> ansible_user=<ssh_user>
+slave_node ansible_host=192.168.1.4 ansible_port=22 ansible_user=ssh_user
 ```
-- cs_1 : хост, на котором будет установлен коммунити сервер
-- ds_node : хост, на котором будет установлен документ сервер
-- master_node : хост, на котором будет установлена база данных mysql master
-- slave_node :  хост, на котором будет установлена база данных mysql svale
+Необходимо заполнить:
+- ansible_host - ip адрес определенного хоста 
+- ansible_port - порт для подключения через ssh ( по умолчанию 22)
+- ansible_user - пользователь для подключения по ssh 
 
-  ## inventory/group_vars/all/main.yml
+### Переменные  hosts
+| vars | description |
+|-------|-------------|
+| cs_1 | хост, на котором будет установлен корпоративный сервер |
+| ds_node | хост, на котором будет установлен документ сервер |
+| master_node | хост, на котором будет установлена база данных mysql master |
+| slave_node | хост, на котором будет установлена база данных mysql svale |
+
+
+## 2. Заполняем переменные в inventory/group_vars/all/main.yml
 ```
 cs: "{{ hostvars[groups['cs'][0]].ansible_host }}" 
 ds: "{{ hostvars[groups['ds'][0]].ansible_host }}"  
 ms: "{{ hostvars[groups['slave_db'][0]].ansible_host }}" 
 mm: "{{ hostvars[groups['master_db'][0]].ansible_host }}"
-mysql_root_db_pass: <DB_password>
-mysql_repl_user:
-  - name: <repl_user>
-    pass: <repl_password>
-    host: <repl_host>
-mysql_cs_repl:
-  - name: <cs_user>
-    pass: <cs_repl>
-    priv: "*.*:ALL"
-    host: <cs_host>
-```
 
-## Лицензия для Документ сервера
-если у вас есть лицензия для документ сервера, ее необходимо переместить в папку roles/ds/templates/license.lic
+mysql_root_db_pass: "<password>"
+mysql_root_db_user: root
+mysql_repl_user:
+  - name: repl
+    pass: "<password>"
+    host: "<host>"
+    priv: "*.*:REPLICATION SLAVE"
+mysql_cs_repl:
+  - name: cs_user
+    pass: "<password>"
+    priv: "*.*:ALL"
+    host: "<host>"
+    db_host: "{{ hostvars[groups['master_db'][0]].ansible_host }}"
+DS_password: <password>
+DS_db_psql: r7office
+DS_psql_user: r7office
+DS_psql_pass: r7office
+```
+### Переменные group_vars
+
+| vars | description |
+|-------|-------------|
+|cs | ip адрес хоста для корпоративного сервера. Берет значение  ansible_host  из файла inventory/hosts|
+| ds| ip адрес хоста для документ сервера. Берет значение  ansible_host  из файла inventory/hosts|
+|ms | ip адрес хоста для базы данных (Master). Берет значение  ansible_host  из файла inventory/hosts|
+|mm |ip адрес хоста для базы данных (Slave). Берет значение  ansible_host  из файла inventory/hosts |
+|mysql_root_db_pass | пароль от пользователя root для входа в mysql|
+|mysql_root_db_user | пользователь для входа в mysql  |
+| mysql_repl_user| переменные для настройки mysql Master с mysql Slave.<br> name - имя пользователя <br>pass - пароль от пользователя <br> host - ip адрес , с которого разрешен вход под данным пользователем ( если указать % то доступ будет разрешен с любого ip) <br> priv- привелегии пользователя|
+|mysql_cs_repl | переменные для интеграции корпоративного сервера с Mysql базой .<br> name - имя пользователя <br>pass - пароль от пользователя <br> priv- привелегии пользователя <br> host - ip адрес , с которого разрешен вход под данным пользователем ( если указать % то доступ будет разрешен с любого ip) |
+|DS_password| пароль для интеграции документ сервера с корпоративным сервером |
+|DS_db_psql | имя базы данных для документ сервера |
+|DS_psql_user | имя пользователя для базы данных документ сервера|
+|DS_psql_pass | пароль для базы данных документ сервера|
+ 
+## Лицензирование Документ сервера
+Если у вас есть лицензия для документ сервера, ее необходимо переместить в папку roles/ds/templates/license.lic
+## 3. Запуск плейбука
+```
+ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory/hosts cs.yml 
+```

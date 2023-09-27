@@ -5,10 +5,13 @@ LOG_DIR="/var/log/r7-office/"
 SERVICES_DIR="${DIR}/Services"
 CONF=$DIR/WebStudio/web.connections.config
 MYSQL=""
-DB_HOST="{{ DB_HOST }}"
-DB_NAME="{{ DB_NAME }}"
-DB_USER="{{ DB_USER }}"
-DB_PWD="{{ DB_PWD }}"
+{% for mysql_user in mysql_cs_repl %}
+DB_NAME="{{ mysql_user.name }}"
+DB_USER="{{ mysql_user.name }}"
+DB_PWD="{{ mysql_user.pass }}"
+DB_HOST="{{ mysql_user.db_host }}"
+{% endfor %}
+
 [ -e $CONF ] || { echo "Configuration file not found at path $CONF"; exit 1; }
 [ $(id -u) -ne 0 ] && { echo "Root privileges required"; exit 1; }
 

@@ -8,16 +8,14 @@ mysql_repl_user:
   - name: repl
     pass: "P@$$w0rd1"
     host: "%"
+    priv: "*.*:REPLICATION SLAVE"
 mysql_cs_repl:
   - name: cs_user
     pass: "Welcome*1"
     priv: "*.*:ALL"
     host: "%"
+    db_host: "{{ hostvars[groups['master_db'][0]].ansible_host }}"
 DS_password: RrTCPPwQ1wq2
-DB_HOST: "host"
-DB_NAME: "r7-office"
-DB_USER: "cs_user"
-DB_PWD: "Welcome*1"
 DS_db_psql: r7office
 DS_psql_user: r7office
 DS_psql_pass: r7office

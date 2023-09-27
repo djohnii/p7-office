@@ -13,7 +13,7 @@
     name: "{{ item.name }}"
     host: "%"
     password: "{{ item.pass }}" #"{{ item.pass|default('verystrong') }}"
-    priv: "*.*:REPLICATION SLAVE"
+    priv: "{{ item.priv }}"
     state: present
   with_items:
     - "{{ mysql_repl_user }}"
@@ -22,9 +22,9 @@
 - name: Create the replication users for cs
   mysql_user:
     name: "{{ item.name }}"
-    host: "%"
+    host: "{{ item.host }}"
     password: "{{ item.pass }}"
-    priv: "*.*:ALL"
+    priv: "{{ item.priv }}"
     state: present
   with_items:
     - "{{ mysql_cs_repl }}"

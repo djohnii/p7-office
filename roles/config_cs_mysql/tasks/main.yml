@@ -1,22 +1,12 @@
 --- 
-- name: Copy file
+- name: Copy file 1
   template:
     src: communityserver-configure.sh.j2
     dest: /usr/bin/communityserver-configure.sh
-- name: Copy file
+- name: Copy file 2
   template:
     src: xmppserver-configure.sh.j2
     dest: /usr/bin/xmppserver-configure.sh
-- name: SECRET change web.appsettings.config  
-  lineinfile:
-      path: /usr/bin/communityserver-configure.sh
-      regexp: 'DB_HOST="host"' 
-      line: 'DB_HOST="{{ mm }}"'
-- name: SECRET change web.appsettings.config  
-  lineinfile:
-      path: /usr/bin/xmppserver-configure.sh
-      regexp: 'DB_HOST="host"' 
-      line: 'DB_HOST="{{ mm }}"'
 - name: run mysql script
   shell: bash /usr/bin/communityserver-configure.sh
 - name: run mysql script
