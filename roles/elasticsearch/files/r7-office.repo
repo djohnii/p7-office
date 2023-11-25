@@ -1,0 +1,5 @@
+[r7-office]
+name=r7-office repo
+baseurl=http://download.r7-office.ru/repo/centos/main/noarch/
+gpgcheck=0
+enabled=1

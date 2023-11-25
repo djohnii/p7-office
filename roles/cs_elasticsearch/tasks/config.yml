@@ -1,0 +1,73 @@
+#  CS server
+- name: on cs
+  when: "'cs' in group_names"
+  block:
+  - name: 1 |  change Web.config
+    lineinfile:
+      dest: /var/www/r7-office/WebStudio/Web.config
+      regexp: '^<section name="redisCacheClient" type="StackExchange.Redis.Extensions.LegacyConfiguration.RedisCachingSectionHandler, StackExchange.Redis.Extensions.LegacyConfiguration" />'
+      insertafter: '<section name="redisCacheClient" type="StackExchange.Redis.Extensions.LegacyConfiguration.RedisCachingSectionHandler, StackExchange.Redis.Extensions.LegacyConfiguration" />'
+      line: '    <section name="elastic" type="ASC.ElasticSearch.Config.ElasticSection, ASC.ElasticSearch" />'
+      state: present
+  - name:  2 | change Web.config
+    lineinfile:
+      dest: /var/www/r7-office/WebStudio/Web.config
+      regexp: '^</redisCacheClient>'
+      # insertbefore: 
+      insertafter: '</redisCacheClient>'
+      line: '  <elastic scheme="http" host="{{ elc }}" port="9200" />'  
+      state: present
+  - name:  1 | change TeamLabSvc.exe.config
+    lineinfile:
+      dest: /var/www/r7-office/Services/TeamLabSvc/TeamLabSvc.exe.config
+      regexp: '^<section name="redisCacheClient" type="StackExchange.Redis.Extensions.LegacyConfiguration.RedisCachingSectionHandler, StackExchange.Redis.Extensions.LegacyConfiguration" />'
+      insertafter: '<section name="redisCacheClient" type="StackExchange.Redis.Extensions.LegacyConfiguration.RedisCachingSectionHandler, StackExchange.Redis.Extensions.LegacyConfiguration" />'
+      line: '    <section name="elastic" type="ASC.ElasticSearch.Config.ElasticSection, ASC.ElasticSearch" />'
+      state: present
+  - name:  2 | change TeamLabSvc.exe.config
+    lineinfile:
+      dest: /var/www/r7-office/Services/TeamLabSvc/TeamLabSvc.exe.config
+      regexp: '^</redisCacheClient>'
+      # insertbefore: 
+      insertafter: '</redisCacheClient>'
+      line: '  <elastic scheme="http" host="{{ elc }}" port="9200" />'  
+      state: present
+
+  - name: Reboot cs server
+    ansible.builtin.reboot:
+      pre_reboot_delay: 10
+  - name: Wait for server to restart
+    local_action:
+      module: wait_for
+        host="{{ hostvars[groups['cs'][0]].ansible_host }}"
+        port="{{ hostvars[groups['elc'][0]].ansible_port }}"
+        delay=10
+  - name:  god stop r7-officeIndex
+    command: "god stop r7-officeIndex"
+    ignore_errors: true
+
+# Elasticsearch server
+- name: on elc
+  when: "'elc' in group_names"
+  block:
+  - name:  remove index
+    command: "curl -X DELETE 'http://{{ elc }}:9200/_all'"
+  - name: stop service elasticsearch 
+    service:
+      name: elasticsearch 
+      state: stopped
+
+# Master server
+- name: on master
+  when: "'master_db' in group_names"
+  block:
+  - name: clean table in database
+    community.mysql.mysql_query:
+      # login_host: "{{ mm }}"
+      login_user: "{{ mysql_root_db_user }}"
+      login_password: "{{ mysql_root_db_pass }}"
+      login_db: "{{ mysql_cs_repl[0].db_name }}"
+      query: >
+        truncate webstudio_index
+
+

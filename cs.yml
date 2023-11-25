@@ -8,6 +8,7 @@
   roles:
     - { role: install_mysql,
               mysql_repl_role: slavedb }
+              
 #Master | Install mysql
 - hosts: master_db
   gather_facts: true
@@ -57,4 +58,20 @@
     - { role: config_cs_mysql }
   vars:
     ansible_python_interpreter: /usr/bin/python3
-    
+# elc | Install elasticsearch
+- hosts: elc
+  gather_facts: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  roles:
+    - { role: elasticsearch }
+#CS | config cs
+- hosts: cs, elc, master_db
+  gather_facts: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  roles:
+    - { role: cs_elasticsearch }
+
+
+  

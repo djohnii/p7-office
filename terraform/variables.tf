@@ -1,6 +1,6 @@
 variable "image_id" {
   type = string
-  default = "AstraOrel_2.12+net+ssh+rdp_new" # 
+  default = "CentOS 7 64-bit" # 
   
   
    #Не устанавливаются   "RedOS_7.3+net+ssh+vnc" #"RedOS_7.3.2_ssh_rdp" # - "RedOS_7.2_ssh_rdp" Debian_9+net+ssh
@@ -73,7 +73,7 @@ variable "avail_zone" {
 # the name of the key, which will be in openstack
 variable "key_name" {
   type = string
-  default = "devops_key_pris2"
+  default = "devops_key_pris3"
 }
 # the path to the public key
 variable "public_key" {

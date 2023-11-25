@@ -20,7 +20,7 @@
   apt:
     name:
       - postgresql
-      # - postgresql-server
+      - postgresql-server
     state: latest
     update_cache: true
 

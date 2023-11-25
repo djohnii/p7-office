@@ -1,11 +1,5 @@
 ---
-- name: install PyMySQL via pip3
-  pip:
-    name: 
-    - "PyMySQL"
-    # - "mysqlclient"
-    state: present
-    executable: pip3
+
 ## CS |  Get mysql dump in CS
 - name: Install the mysql packages in Deb 
   when: inventory_hostname in groups['cs'] and ansible_os_family == 'Debian'
@@ -17,8 +11,10 @@
   with_items:
     - "python3-PyMySQL"
     - "php-mysql"
-
-
+- name: Install PyMySQL from pip.
+  ansible.builtin.pip:
+    name: PyMySQL
+    executable: pip3
 - name: Вывести временный пароль MySQL
   when: inventory_hostname in groups['cs']
   shell: cat /var/www/r7-office/WebStudio/web.connections.config | grep -oP 'Password=\K[^;]+' | sed 's/\\\\/\//g'
@@ -37,12 +33,12 @@
   fetch:
     src: /tmp/dump.sql
     dest: /tmp/dump.sql
-## Master | import dump 
+# Master | import dump 
 - name: Transfer file from ServerA to ServerB
   when: inventory_hostname in groups['master_db']
   synchronize:
     src: /tmp/dump.sql/cs_1/tmp/dump.sql
-    dest: /tmp/dump.sql
+    dest: /tmp/
 - name: Restore database
   when: inventory_hostname in groups['master_db']
   community.mysql.mysql_db:

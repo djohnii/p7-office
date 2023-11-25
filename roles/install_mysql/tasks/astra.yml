@@ -18,8 +18,14 @@
     name: 
       - "mariadb-server"
       - "mariadb-client"
-      - "python3-pymysql"
-      - "php-mysql"
+      - "python3-pip"
+      # - "python3-pymysql"
+      # - "php-mysql"
+- name: install PyMySQL via pip3
+  pip:
+    name: PyMySQL
+    state: present
+    executable: pip3
 - name: started mysqld
   ansible.builtin.service:
     name: mysql
@@ -35,7 +41,7 @@
     name: "{{ mysql_root_db_user }}"
     password: "{{ mysql_root_db_pass }}"
     login_unix_socket: /var/run/mysqld/mysqld.sock
-
+  ignore_errors: true
 # MASTER
 - name: Copy the mysqld.cnf file for Master
   template:

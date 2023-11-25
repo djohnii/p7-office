@@ -8,5 +8,7 @@ output "node_name_and_ip" {
     mm_ip = openstack_compute_instance_v2.mm_vm.access_ip_v4
     ms_name = openstack_compute_instance_v2.ms_vm.name
     ms_ip = openstack_compute_instance_v2.ms_vm.access_ip_v4
+    elc_name = openstack_compute_instance_v2.elc_vm.name
+    elc_ip = openstack_compute_instance_v2.elc_vm.access_ip_v4
     } 
 }

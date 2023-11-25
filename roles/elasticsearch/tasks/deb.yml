@@ -1,0 +1,50 @@
+---
+- name: permit port 9200/tcp
+  firewalld:
+    port: 9200/tcp
+    permanent: yes
+    zone: public
+    state: enabled #present
+  ignore_errors: true
+- name: Firewall reload
+  ansible.builtin.shell:
+    cmd: firewall-cmd --reload
+  ignore_errors: true
+# Install elasticsearch
+- name: add repo r7-office
+  shell: 'echo "deb https://download.r7-office.ru/repo/debian squeeze main" | tee /etc/apt/sources.list.d/r7-office.list'
+- name: Import a key from a url
+  ansible.builtin.apt_key:
+    state: present
+    url: https://download.r7-office.ru/repo/gpgkey/r7-office.gpg.key 
+- name: Update system
+  apt: 
+    update_cache: yes
+- name: Install elasticsearch-7.16.3
+  shell: "apt install -yq elasticsearch=7.16.3"
+- name: copy config elasticsearch.yml
+  copy:
+    src: elasticsearch.yml
+    dest:  /etc/elasticsearch/elasticsearch.yml
+- name: edit /etc/elasticsearch/jvm.options
+  copy:
+    src: jvm.options
+    dest: /etc/elasticsearch/jvm.options
+- name: Start and enable service elasticsearch
+  service:  
+    name: "elasticsearch"
+    state: started
+    enabled: yes
+
+# Install plugin
+- name: Wget url plugin
+  get_url:
+    url: https://download.r7-office.ru/ingest-attachment/ingest-attachment-7.16.3.zip
+    dest: /tmp/ingest-attachment-7.16.3.zip
+
+- name: install plugin
+  shell: "yes | /usr/share/elasticsearch/bin/elasticsearch-plugin install file:///tmp/ingest-attachment-7.16.3.zip"
+- name: restart elasticsearch
+  service:
+    name: elasticsearch
+    state: restarted

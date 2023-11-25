@@ -1,7 +1,9 @@
-- name: Вывести хосты с ansible_distribution == "RED"
+---
+- name: test
   hosts: all
+  become: true
   tasks:
-    - name: Вывести список хостов с ansible_distribution == "RED"
-      debug:
-        msg: "{{ inventory_hostname }}"
-      when: ansible_distribution == "RED" and ansible_distribution_release == "MUROM"
+    - name: Remove all partitions from disk
+      command: " parted /dev/sda resizepart 1  Yes 100%"
+    - name: Remove all partitions from disk
+      command:   "resize2fs /dev/sda1"

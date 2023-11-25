@@ -13,10 +13,7 @@
     cmd: curl -s https://download.r7-office.ru/repo/gpgkey/r7-office.gpg.key | sudo apt-key add -
 - name: Update packages
   apt:
-    # name: "*"
     update_cache: yes
-    # state: latest
-
 - name: install postgresql 
   apt:
     name: postgresql

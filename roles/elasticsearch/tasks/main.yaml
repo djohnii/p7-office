@@ -1,0 +1,16 @@
+# DEB
+# - include_tasks: deb.yml
+#   when: ansible_distribution == 'Ubuntu' 
+- include_tasks: deb.yml
+  when: ansible_os_family == 'Debian'
+
+- include_tasks: deb.yml
+  when: ansible_os_family == 'Astra Linux' or ansible_os_family ==  'Astra Linux (Orel)'
+
+# RPM
+- include_tasks: rpm.yml
+  when: ansible_distribution == 'RED' #and ansible_distribution_release == 'MUROM'
+- include_tasks: rpm.yml
+  when: ansible_distribution == "CentOS" #and ansible_distribution_major_version == "8"
+# - include_tasks: rpm.yml
+#   when: (ansible_distribution == "CentOS"  and ansible_distribution_major_version == "7")

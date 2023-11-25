@@ -1,0 +1,17 @@
+- name: restart monoserve
+  service: 
+    name: "monoserve"
+    state: restarted
+  when: "'cs' in group_names"
+- name: start monoserve
+  command: "god start r7-officeIndex"
+  when: "'cs' in group_names"
+- name: start service elasticsearch 
+  service:
+    name: elasticsearch 
+    state: started
+  when: "'elc' in group_names"
+- name: start monoserve
+  shell: "god start r7-officeIndex"
+  ignore_errors: true
+  when: "'cs' in group_names"

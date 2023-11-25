@@ -6,7 +6,7 @@ SERVICES_DIR="${DIR}/Services"
 CONF=$DIR/WebStudio/web.connections.config
 MYSQL=""
 {% for mysql_user in mysql_cs_repl %}
-DB_NAME="{{ mysql_user.name }}"
+DB_NAME="{{ mysql_user.db_name }}"
 DB_USER="{{ mysql_user.name }}"
 DB_PWD="{{ mysql_user.pass }}"
 DB_HOST="{{ mysql_user.db_host }}"

@@ -18,12 +18,10 @@
   ansible.builtin.shell:
     cmd: curl -o /tmp/mysql-apt-config_0.8.24-1_all.deb -OL http://dev.mysql.com/get/mysql-apt-config_0.8.24-1_all.deb
 
-- name: get key 
-  get_url:
+- name: add key 
+  ansible.builtin.apt_key:
     url: https://repo.mysql.com/RPM-GPG-KEY-mysql
-    dest: /tmp/RPM-GPG-KEY-mysql
-- name: add key
-  command: sudo apt-key add /tmp/RPM-GPG-KEY-mysql
+    state: present
 - name: Setting repo
   ansible.builtin.shell:
     cmd: DEBIAN_FRONTEND=noninteractive dpkg -i /tmp/mysql-apt-config_0.8.24-1_all.deb

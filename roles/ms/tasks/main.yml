@@ -5,7 +5,7 @@
   when: ansible_os_family == 'Debian'
 
 - include_tasks: deb.yml
-  when: ansible_os_family == 'Astra Linux'
+  when: ansible_os_family == 'Astra Linux' or ansible_os_family ==  'Astra Linux (Orel)'
 
 - include_tasks: red.yml
   when: ansible_distribution == 'RED' and ansible_distribution_release == 'MUROM'

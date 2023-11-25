@@ -2,6 +2,7 @@ cs: "{{ hostvars[groups['cs'][0]].ansible_host }}"
 ds: "{{ hostvars[groups['ds'][0]].ansible_host }}"  
 ms: "{{ hostvars[groups['slave_db'][0]].ansible_host }}" 
 mm: "{{ hostvars[groups['master_db'][0]].ansible_host }}"
+elc: "{{ hostvars[groups['elc'][0]].ansible_host }}"
 mysql_root_db_pass: "Lordaeron1$"
 mysql_root_db_user: root
 mysql_repl_user:
@@ -14,6 +15,7 @@ mysql_cs_repl:
     pass: "Lordaeron3$"
     priv: "*.*:ALL"
     host: "%"
+    db_name: r7-office
     db_host: "{{ hostvars[groups['master_db'][0]].ansible_host }}"
 DS_password: Lordaeron5$
 DS_db_psql: r7office
