@@ -1,0 +1,225 @@
+---
+- name: Download script and run (Centos and RedOS) 
+  block:
+
+    - name: Upgrade all packages
+      yum:
+        name: '*'
+        state: latest
+
+    - name: Download script
+      get_url:
+        url: "{{ url_cs_redhat }}"
+        dest: /tmp/install-RedHat.sh
+        mode: '0644'
+        validate_certs: no
+        force: yes
+
+    - name: Pre-installation steps for Centos
+      yum:
+        name: "{{ packagesCentos }}"
+        update_cache: yes
+        state: latest
+      when: ipv4_172.ansible_facts.ansible_distribution == "CentOS"
+
+    - name: Firewalld
+      block:
+
+        - name: Restart service firewalld
+          ansible.builtin.service:
+            name: firewalld
+            state: restarted
+            enabled: yes
+
+        - name: Add-port=80/tcp
+          ansible.builtin.shell:
+            cmd: firewall-cmd --zone=public --add-port=80/tcp --permanent
+
+        - name: Add-port=2235/tcp
+          ansible.builtin.shell:
+            cmd: firewall-cmd --zone=public --add-port=2235/tcp --permanent
+
+        - name: Add-port=22/tcp
+          ansible.builtin.shell:
+            cmd: firewall-cmd --zone=public --add-port=22/tcp --permanent
+
+        - name: Firewall reload
+          ansible.builtin.shell:
+            cmd: firewall-cmd --reload
+
+      ignore_errors: True
+      when: ipv4_172.ansible_facts.ansible_distribution == "CentOS"
+
+    - name: Pre-installation steps for RedOS
+      block:
+
+        - name: Run command for 7.3.2
+          ansible.builtin.shell: |
+            restorecon -Rv /var/lib/rpm
+            rpmdb --rebuilddb
+          when: ipv4_172.ansible_facts.ansible_distribution_version == "7.3.2"
+
+        - name: Remove of pacheges RedOS
+          yum:
+            name: "{{ packagesRedOS }}"
+            state: absent
+
+        - name: Remove of pacheges RedOS
+          yum:
+            name: "{{ packagesRedOS }}"
+            state: absent
+
+        - name: Install app for RedOS7.2
+          yum:
+            name: "{{ packagesRedOS72 }}"
+          when: ipv4_172.ansible_facts.ansible_distribution_version == "7.2"
+    
+        - name: Remove my.cnf
+          ansible.builtin.file:
+            path: /etc/my.cnf
+            state: absent
+
+        - name: Install dotnet-host
+          ansible.builtin.yum:
+            name: https://packages.microsoft.com/centos/7/prod/Packages/d/dotnet-host-6.0.9-x64.rpm
+            validate_certs: no
+            disable_gpg_check: yes
+
+      when: ipv4_172.ansible_facts.ansible_distribution == "RED"
+
+    - name: Run cs install
+      ansible.builtin.shell:
+        cmd: yes | bash /tmp/install-RedHat.sh
+      register: runscriptcent
+
+    - name: Debug runscriptcent
+      debug:
+        msg: "{{ runscriptcent }}"
+
+  delegate_to: "{{ vm_info.server.private_v4 }}"
+  become: true
+  when: ipv4_172.ansible_facts.ansible_distribution == "CentOS" or
+        ipv4_172.ansible_facts.ansible_distribution == "RED" or
+        ipv4_172.ansible_facts.ansible_distribution == "Fedora" or 
+        ipv4_172.ansible_facts.ansible_distribution == "ROSA"
+
+- name: Download script and run (AstraLinux, Debian and Ubuntu)
+  block:
+
+    - name: Update all packages to their latest version
+      apt:
+        name: "*"
+        state: latest
+        update_cache: yes
+      when: ipv4_172.ansible_facts.ansible_distribution_version == "16.04" or 
+            ipv4_172.ansible_facts.ansible_distribution_version == "18.04" or
+            ipv4_172.ansible_facts.ansible_distribution_release == "stretch"
+
+    - name: Download script
+      get_url:
+        url: "{{ url_cs_deb }}"
+        dest: /tmp/install-AstraLinux.sh
+        mode: '0644'
+        validate_certs: no
+        force: yes
+
+    - name: Pre-installation
+      apt:
+        name: "{{ packagesDeb }}"
+        state: latest
+      when: ipv4_172.ansible_facts.ansible_distribution == "Debian" or ipv4_172.ansible_facts.ansible_distribution == "Ubuntu"
+
+    - name: Run py for Ubuntu 16.04
+      ansible.builtin.shell:
+        cmd: curl -fsSL https://bootstrap.pypa.io/pip/3.5/get-pip.py | python3.5
+      when: ipv4_172.ansible_facts.ansible_distribution == "Ubuntu" and
+            ipv4_172.ansible_facts.ansible_distribution_version == "16.04"
+
+    - name: Run cs install
+      ansible.builtin.shell:
+        cmd: bash /tmp/install-AstraLinux.sh
+      register: runscriptdeb
+
+    - name: Debug runscriptdeb
+      debug:
+        msg: "{{ runscriptdeb }}"
+
+  delegate_to: "{{ vm_info.server.private_v4 }}"
+  become: true
+  when: ipv4_172.ansible_facts.ansible_distribution == "Debian" or
+        ipv4_172.ansible_facts.ansible_distribution == "Ubuntu" or
+        ipv4_172.ansible_facts.ansible_distribution == "Astra Linux" or
+        ipv4_172.ansible_facts.ansible_distribution == "Astra Linux (Orel)"
+
+- name: Download script and run (AltLinux)
+  block:
+
+    - name: Update repo
+      ansible.builtin.shell:
+        cmd: apt-get update
+
+    - name: Update all packages to their latest version
+      ansible.builtin.shell:
+        cmd: apt-get dist-upgrade -y
+        
+    - name: Download script
+      get_url:
+        url: "{{ url_cs_alt }}"
+        dest: /tmp/install-ALTLinux.sh
+        mode: '0644'
+        validate_certs: no
+        force: yes
+
+    - name: Remove pacheges "Altlinux"
+      ansible.builtin.package:
+        name: "{{ packagesAlt }}"
+        state: absent
+
+    - name: Remove packages via the console
+      ansible.builtin.shell:
+        cmd: apt-get remove MySQL-server mariadb-server libmariadb3 -y
+      when: ipv4_172.ansible_facts.ansible_distribution_release == "Altostratus" and
+            ipv4_172.ansible_facts.ansible_distribution_version == "9.1"
+
+    - name: Recursively remove directory
+      ansible.builtin.file:
+        path: /var/lib/mysql/db
+        state: absent
+
+    - name: Stop service ahttpd
+      ansible.builtin.shell:
+        cmd: systemctl stop ahttpd
+      ignore_errors: True
+
+    - name: Stop service httpd2
+      ansible.builtin.shell:
+        cmd: systemctl stop httpd2
+      ignore_errors: True
+
+    - name: Run cs install
+      ansible.builtin.shell:
+        cmd: bash /tmp/install-ALTLinux.sh
+      register: runscriptalt
+
+    - name: Debug runscriptalt
+      debug:
+        msg: "{{ runscriptalt }}"
+
+    - name: Start service on Altostratus 9.1 
+      ansible.builtin.shell:
+        cmd: systemctl start monoserve monoserveApiSystem r7-officeTelegram r7-officeRadicale r7-officeSocketIO r7-officeThumb r7-officeUrlShortener r7-officeBackup r7-officeFeed r7-officeIndex r7-officeIndex r7-officeNotify r7-officeMailAggregator r7-officeMailWatchdog r7-officeMailCleaner r7-officeRadicale r7-officeStorageMigrate r7-officeStorageEncryption
+      when: ipv4_172.ansible_facts.ansible_distribution_release == "Altostratus" and
+            ipv4_172.ansible_facts.ansible_distribution_version == "9.1"
+          
+    - name: Enable service on Altostratus 9.1 
+      ansible.builtin.shell:
+        cmd: systemctl enable monoserve monoserveApiSystem r7-officeTelegram r7-officeRadicale r7-officeSocketIO r7-officeThumb r7-officeUrlShortener r7-officeBackup r7-officeFeed r7-officeIndex r7-officeIndex r7-officeNotify r7-officeMailAggregator r7-officeMailWatchdog r7-officeMailCleaner r7-officeRadicale r7-officeStorageMigrate r7-officeStorageEncryption
+      when: ipv4_172.ansible_facts.ansible_distribution_release == "Altostratus" and
+            ipv4_172.ansible_facts.ansible_distribution_version == "9.1"
+
+  delegate_to: "{{ vm_info.server.private_v4 }}"
+  become: true
+  when: ipv4_172.ansible_facts.ansible_distribution == "Altlinux" or 
+        (ipv4_172.ansible_facts.ansible_distribution_major_version == '10' and
+        ipv4_172.ansible_facts.ansible_distribution != 'Debian') or
+        ipv4_172.ansible_facts.ansible_distribution == "MOS"

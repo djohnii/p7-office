@@ -1,0 +1,63 @@
+
+ ---
+ - hosts: master_db
+   gather_facts: false
+   roles:
+     - { role: ms,
+               mysql_repl_role: master }
+ - hosts: slave_db
+   gather_facts: false
+   roles:
+     - { role: ms,
+               mysql_repl_role: slave }
+
+
+#- name: install CS
+#  hosts: cs
+#  become: true
+#  tasks:
+  # - name: waiting when 2235 port is ready
+  #   wait_for:
+  #     port: "2235"
+  #     host: openstack_compute_instance_v2.cs_vm.access_ip_v4
+  #     search_regex: OpenSSH
+  #     connect_timeout: 600
+  #     delay: 10
+
+  # - name: Update repo
+  #   ansible.builtin.yum:
+  #     update_cache=yes
+ # - name: download file
+ #   ansible.builtin.get_url:
+ #     url: "https://download.r7-office.ru/repo/install-RedHat.sh"
+ #     dest: "./install-RedHat.sh"
+ #     mode: '777'
+ #     validate_certs: no
+  # - name: recursively remove directory
+  #   ansible.builtin.file:
+  #     path: /var/lib/mysql/db
+  #     state: absent
+  # - name: stop service httpd2
+  #   ansible.builtin.service:
+  #     name: httpd2
+  #     state: stopped
+  #     enabled: yes
+  #   ignore_errors: yes
+  # - name: stop service ahttpd
+  #   ansible.builtin.service:
+  #     name: ahttpd
+  #     state: stopped
+  #     enabled: yes
+  #   ignore_errors: yes
+  # Установка Сервера Совместной работы
+ # - name: change permission
+ #   command: chmod +x ./install-RedHat.sh
+ # - name: install cs
+ #   command: bash ./install-RedHat.sh
+ #   register: script_output#
+
+  #- name: Display script output
+  #  debug:
+  #    var: script_output.stdout_lines
+
+

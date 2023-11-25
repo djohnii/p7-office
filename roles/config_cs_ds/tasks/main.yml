@@ -28,9 +28,11 @@
 - name: change /etc/r7-office/documentserver/local.json secret
   when: mysql_repl_role == "ds"
   replace:
-      path: /etc/r7-office/documentserver/local.json 
-      regexp: '          "string": "secret"' 
-      replace: '          "string": "{{ DS_password }}"'
+    path: /etc/r7-office/documentserver/local.json
+    regexp: '(\s{10}"string":\s*")(\S+)(")'
+    replace: '\1{{ DS_password }}\3'
+
+
 # Перезапускаем сервис 
 - name: restart ds 
   when: mysql_repl_role == "ds"
@@ -99,5 +101,3 @@
   service:
     name: monoserve.service
     state: restarted
-
-    

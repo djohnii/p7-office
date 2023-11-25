@@ -1,0 +1,120 @@
+---
+
+
+- name: Remove mariaDB
+  yum:
+    name:
+      - "{{ item }}"
+    state: absent
+  with_items:
+    - "mariadb-common"
+    - "mariadb-config"
+    - "mariadb-libs"
+    - "mariadb-connector-c"
+    - "mariadb-connector-c-config"
+- name: Wget URL
+  ansible.builtin.get_url:
+    url: https://repo.mysql.com//mysql80-community-release-el7-3.noarch.rpm
+    dest: /root/
+- name: RPM
+  command: sudo rpm -ivh mysql80-community-release-el7-3.noarch.rpm
+  ignore_errors: yes
+- name: Import rpm
+  command: rpm --import https://repo.mysql.com/RPM-GPG-KEY-mysql-2022
+
+- name: Install the mysql packages in Redhat 
+  become: true
+  yum:
+    update_cache: yes
+    validate_certs: no
+    disable_gpg_check: yes
+    name:
+      - "{{ item }}"
+    state: installed
+  with_items:
+    - "mysql-community-server"
+    - "mysql-community-client"
+  notify:
+   - restart mysqld
+
+- name: install PyMySQL via pip3
+  pip:
+    name: PyMySQL
+    state: present
+    executable: pip3
+
+- name: Start MySQL service
+  service:
+    name: mysqld
+    state: started
+    enabled: true
+- name: Вывести временный пароль MySQL
+  shell: cat /var/log/mysqld.log | grep "temporary password" | rev | cut -d " " -f 1 | rev | tail -1
+  register: mysql_temporary_root_password
+
+- name: reset expired temporary root password
+  command: "mysql -uroot -p{{ mysql_temporary_root_password.stdout }} --connect-expired-password -NBe \"ALTER USER root@localhost IDENTIFIED WITH mysql_native_password BY '{{ mysql_root_db_pass }}'\"" #IDENTIFIED WITH mysql_native_password BY
+
+- name: permit port 3306/tcp
+  firewalld:
+    port: 3306/tcp
+    permanent: yes
+    zone: public
+    state: enabled #present
+  ignore_errors: true
+- name: Firewall reload
+  ansible.builtin.shell:
+    cmd: firewall-cmd --reload
+  ignore_errors: true
+# MASTER
+- name: Copy the my.cnf file for Master
+  template:
+    src: "red.my.cnf"
+    dest: "/etc/my.cnf"
+#   notify:
+#    - restart mysqld
+  when: mysql_repl_role == 'master'
+- name: Copy the directory mysqld.service for Master
+  template:
+    src: "red.mysqld.service"
+    dest: "/lib/systemd/system/mysqld.service"
+#   notify:
+#    - restart mysqld
+  when: mysql_repl_role == 'master'
+# SLAVE
+- name:  Copy the my.cnf file for Slave
+  template:
+    src: "red.slave.my.cnf"
+    dest: "/etc/my.cnf"
+  # notify:
+  #  - restart mysqld
+  when: mysql_repl_role == 'slavedb'
+# Копируем конфиг mysqld
+- name: Copy the directory mysqld.service for Slave
+  template:
+    src: "red.mysqld.service"
+    dest: "/lib/systemd/system/mysqld.service"
+  # notify:
+  #  - restart mysqld
+  when: mysql_repl_role == 'slavedb'
+
+
+# # Копируем файл конфиг
+- name: Copy .my.cnf file with root password credentials
+  template:
+    src: "my.cnf.j2"
+    dest: "~/.my.cnf"
+
+# Перезапускаем серсис
+- name: Restart systemctl daemon-reload
+  command: systemctl daemon-reload
+- name: Start MySQL service
+  service:
+    name: mysqld
+    state: stopped
+    enabled: true
+- name: Start MySQL service
+  service:
+    name: mysqld
+    state: started
+    enabled: true

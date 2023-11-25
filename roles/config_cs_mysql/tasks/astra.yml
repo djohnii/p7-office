@@ -1,0 +1,102 @@
+---
+- name: install PyMySQL via pip3
+  pip:
+    name: 
+    - "PyMySQL"
+    # - "mysqlclient"
+    state: present
+    executable: pip3
+## CS |  Get mysql dump in CS
+- name: Install the mysql packages in Deb 
+  when: inventory_hostname in groups['cs'] and ansible_os_family == 'Debian'
+  apt:
+    update_cache: yes
+    name:
+      - "{{ item }}"
+    state: latest
+  with_items:
+    - "python3-PyMySQL"
+    - "php-mysql"
+
+
+- name: Вывести временный пароль MySQL
+  when: inventory_hostname in groups['cs']
+  shell: cat /var/www/r7-office/WebStudio/web.connections.config | grep -oP 'Password=\K[^;]+' | sed 's/\\\\/\//g'
+  register: mysql_temporary_root_password
+- name: Dump multiple databases
+  when: inventory_hostname in groups['cs']
+  community.mysql.mysql_db:
+    login_user: root
+    login_password: "{{ mysql_temporary_root_password.stdout }}"
+    state: dump
+    name:
+      - r7-office
+    target: /tmp/dump.sql
+- name: Fetch a file from a remote system
+  when: inventory_hostname in groups['cs']
+  fetch:
+    src: /tmp/dump.sql
+    dest: /tmp/dump.sql
+## Master | import dump 
+- name: Transfer file from ServerA to ServerB
+  when: inventory_hostname in groups['master_db']
+  synchronize:
+    src: /tmp/dump.sql/cs_1/tmp/dump.sql
+    dest: /tmp/dump.sql
+- name: Restore database
+  when: inventory_hostname in groups['master_db']
+  community.mysql.mysql_db:
+    name: r7-office
+    state: import
+    target: /tmp/dump.sql
+- name: added port 3306
+  when: inventory_hostname in groups['master_db']
+  ansible.posix.firewalld:
+    port: 3306/tcp
+    permanent: true
+    state: enabled
+  ignore_errors: true
+
+## CS | config CS for remote mysql
+- name: Server   
+  when: inventory_hostname in groups['cs']
+  replace:
+    path: "{{ item }}"
+    regexp: "Server=127.0.0.1;"
+    replace: "Server={{ hostvars[groups['master_db'][0]].ansible_host }};"
+  loop:
+    - "/var/www/r7-office/ApiSystem/Web.config"
+    - "/var/www/r7-office/Services/TeamLabSvc/TeamLabSvc.exe.config"
+    - "/var/www/r7-office/Services/Jabber/ASC.Xmpp.Server.Launcher.exe.config"
+    - "/var/www/r7-office/WebStudio/web.connections.config"
+
+- name: Password 
+  when: inventory_hostname in groups['cs']
+  replace:
+    path: "{{ item }}"
+    regexp: "Password={{ mysql_temporary_root_password.stdout }}"
+    replace: "Password={{mysql_cs_repl[0].pass}}"
+  loop:
+    - "/var/www/r7-office/ApiSystem/Web.config"
+    - "/var/www/r7-office/Services/TeamLabSvc/TeamLabSvc.exe.config"
+    - "/var/www/r7-office/Services/Jabber/ASC.Xmpp.Server.Launcher.exe.config"
+    - "/var/www/r7-office/WebStudio/web.connections.config"
+- name: restart monoserv
+  command : systemctl restart monoserve r7-office*
+  when: inventory_hostname in groups['cs']
+
+- name: user 
+  when: inventory_hostname in groups['cs']
+  replace:
+    path: "{{ item }}"
+    regexp: "User ID=root"
+    replace: "User ID={{ mysql_cs_repl[0].name }}"
+  loop:
+    - "/var/www/r7-office/ApiSystem/Web.config"
+    - "/var/www/r7-office/Services/TeamLabSvc/TeamLabSvc.exe.config"
+    - "/var/www/r7-office/Services/Jabber/ASC.Xmpp.Server.Launcher.exe.config"
+    - "/var/www/r7-office/WebStudio/web.connections.config"
+- name: restart monoserv
+  command : systemctl restart monoserve r7-office*
+  when: inventory_hostname in groups['cs']
+

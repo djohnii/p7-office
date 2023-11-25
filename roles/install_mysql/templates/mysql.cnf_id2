@@ -1,0 +1,21 @@
+[mysqld]
+server_id = 2
+user            = mysql
+#bind-address            = 0.0.0.0
+key_buffer_size         = 16M
+myisam-recover-options  = BACKUP
+log_error = /var/log/mysql/error.log
+max_binlog_size   = 100M
+log_bin = /var/log/mysql/mysql-bin.log
+log_bin_index =/var/log/mysql/mysql-bin.log.index
+relay_log = /var/log/mysql/mysql-relay-bin
+relay_log_index = /var/log/mysql/mysql-relay-bin.index
+wait_timeout = 900
+interactive_timeout = 900
+default-authentication-plugin = mysql_native_password
+collation_server = utf8_general_ci
+character_set_server = utf8
+max_allowed_packet = 1048576000
+group_concat_max_len = 2048
+max_connections = 1000
+sql_mode = 'NO_ENGINE_SUBSTITUTION'

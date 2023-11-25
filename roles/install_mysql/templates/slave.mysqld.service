@@ -1,24 +1,25 @@
 [Unit]
-Description=MySQL Server
-Documentation=man:mysqld(8)
-Documentation=http://dev.mysql.com/doc/refman/en/using-systemd.html
+Description=MySQL Community Server
 After=network.target
-After=syslog.target
- 
+
 [Install]
 WantedBy=multi-user.target
- 
+
 [Service]
 LimitMEMLOCK = infinity
+Type=notify
 User=mysql
 Group=mysql
-Type=notify
 TimeoutSec=0
-ExecStartPre=+/usr/bin/mysqld_pre_systemd
-ExecStart=/usr/sbin/mysqld $MYSQLD_OPTS
-EnvironmentFile=-/etc/sysconfig/mysql
-LimitNOFILE = infinity
+PIDFile=/run/mysqld/mysqld.pid
+PermissionsStartOnly=true
+ExecStartPre=/usr/share/mysql/mysql-systemd-start pre
+ExecStart=/usr/sbin/mysqld
+TimeoutSec=infinity
 Restart=on-failure
-RestartPreventExitStatus=1
-Environment=MYSQLD_PARENT_PID=1
+RuntimeDirectory=mysqld
+RuntimeDirectoryMode=755
+LimitNOFILE=10000
 PrivateTmp=false
+# Set enviroment variable MYSQLD_PARENT_PID. This is required for restart.
+Environment=MYSQLD_PARENT_PID=1

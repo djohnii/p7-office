@@ -1,0 +1,111 @@
+
+- name: Start the mysql services
+  service:
+    name: "{{ mysql_service }}"
+    state: started
+    enabled: yes
+
+- name: Create the replication users for slave
+  mysql_user:
+    name: "{{ item.name }}"
+    host: "{{ item.host }}"
+    password: "{{ item.pass|default('verystrong') }}"
+    priv: "{{ item.priv }}"
+    state: present
+  with_items:
+    - "{{ mysql_repl_user }}"
+  when: mysql_repl_role == 'master'
+
+- name: Create the replication users for cs
+  mysql_user:
+    name: "{{ item.name }}" #"cs_user"
+    host: "{{ item.host }}"
+    password: "{{ item.pass }}" #"Welcome*1"
+    priv: "{{ item.priv }}"
+    state: present
+  when: mysql_repl_role == 'master'
+  with_items:
+    - "{{ mysql_cs_repl }}"
+#REPLICA Slave
+
+- name: Get the current master servers replication status
+  mysql_replication:
+    mode: getprimary
+  delegate_to: master_node
+  register: repl_stat
+
+- name: Query
+  community.mysql.mysql_query:
+    # login_host: "{{ mysql_login_host }}"
+    login_user: "{{ mysql_root_db_user }}"
+    login_password: "{{ mysql_root_db_pass }}"
+    # login_db: db_name
+    query: >
+      STOP SLAVE
+  when: mysql_repl_role == 'slavedb'
+# - name: Query 2
+#   community.mysql.mysql_query:
+#     # login_host: "{{ mysql_login_host }}"
+#     login_user: "root"
+#     login_password: "P@$$w0rd1"
+#     # login_db: db_name
+#     query: >
+#       CHANGE REPLICATION SOURCE TO SOURCE_HOST = '{{ hostvars['master_node']['ansible_host'] }}', 
+#       SOURCE_USER = 'repl',
+#       SOURCE_PASSWORD = 'P@$$w0rd1',
+#       SOURCE_LOG_FILE = '{{ repl_stat.File }}',
+#       SOURCE_LOG_POS = {{ repl_stat.Position }};
+#   when: mysql_repl_role == 'slavedb'
+# - name: Query 3
+#   community.mysql.mysql_query:
+#     # login_host: "{{ mysql_login_host }}"
+#     login_user: "root"
+#     login_password: "P@$$w0rd1"
+#     # login_db: db_name
+#     query: >
+#       start replica
+#   when: mysql_repl_role == 'slavedb'
+
+- name: Change the master in slave to start the replication
+  mysql_replication:
+    mode: changeprimary
+    master_host: "{{ hostvars['master_node']['ansible_host'] }}"
+    master_log_file: "{{ repl_stat.File }}"
+    master_log_pos: "{{ repl_stat.Position }}"
+    master_user: "{{ item.name }}"
+    master_password: "{{ item.pass }}"
+  with_items:
+   - "{{ mysql_repl_user }}"
+  when: mysql_repl_role == 'slavedb' 
+- name: Run start replica 
+  mysql_replication:
+    mode: startreplica
+  when:  mysql_repl_role == "slavedb"
+
+
+- name: Query 3
+  community.mysql.mysql_query:
+    # login_host: "{{ mysql_login_host }}"
+    login_user: "{{ mysql_root_db_user }}"
+    login_password: "{{ mysql_root_db_pass }}"
+    # login_db: db_name
+    query: >
+      START SLAVE
+  when: mysql_repl_role == 'slavedb'
+
+
+
+# - name: Change the master in slave to start the replication
+#   mysql_replication:
+#     mode: changeprimary
+#     master_host: "{{ mysql_repl_master }}"
+#     master_log_file: "{{ repl_stat.File }}"
+#     master_log_pos: "{{ repl_stat.Position }}"
+#     master_user: "repl"
+#     master_password: "{{ mysql_root_db_pass }}"
+#   when: mysql_repl_role == 'slavedb' 
+# - name: Run start replica 
+#   mysql_replication:
+#     mode: startreplica
+#   when:  mysql_repl_role == "slavedb"
+

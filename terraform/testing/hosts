@@ -1,0 +1,2 @@
+[cs]
+cs_test ansible_host=192.168.26.132 ansible_port=2235 ansible_user=root

@@ -1,0 +1,18 @@
+--- 
+- name: Copy file 1
+  template:
+    src: communityserver-configure.sh.j2
+    dest: /usr/bin/communityserver-configure.sh
+  when: inventory_hostname in groups['cs']
+- name: Copy file 2
+  template:
+    src: xmppserver-configure.sh.j2
+    dest: /usr/bin/xmppserver-configure.sh
+  when: inventory_hostname in groups['cs']
+- name: run mysql script
+  shell: bash /usr/bin/communityserver-configure.sh
+- name: run mysql script
+  shell: bash /usr/bin/xmppserver-configure.sh
+  when: inventory_hostname in groups['cs']
+
+  

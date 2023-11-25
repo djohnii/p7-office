@@ -1,0 +1,42 @@
+
+- name: install CS
+  hosts: cs
+  become: true
+  tasks:
+  - name: download tools.sh
+    ansible.builtin.get_url:
+      url: "https://download.r7-office.ru/repo/install-RedHat/tools.sh"
+      dest: "/root/tools.sh"
+      mode: '0777'
+    register: tools
+  - name: download bootstrap.sh
+    ansible.builtin.get_url:
+      url: https://download.r7-office.ru/repo/install-RedHat/bootstrap.sh
+      dest: /root/bootstrap.sh
+      mode: '0777'
+    register: bootstarap
+  - name: download check-ports.sh
+    ansible.builtin.get_url:
+      url: https://download.r7-office.ru/repo/install-RedHat/check-ports.sh
+      dest: /root/check-ports.sh
+      mode: '0777'
+    register: checkports
+  - name: download install-preq.sh
+    ansible.builtin.get_url:
+      url: https://download.r7-office.ru/repo/install-RedHat/install-preq.sh
+      dest: /root//install-preq.sh
+      mode: '0777'
+    register: preq
+  - name: download install-app.sh
+    ansible.builtin.get_url:
+      url: https://download.r7-office.ru/repo/install-RedHat/install-app.sh
+      dest: /root/install-app.sh
+      mode: '0777'
+    register: installapp
+  - name: start
+    command: bash ./install-RedHat.sh
+    register: script_output
+
+  - name: Display script output
+    debug:
+      var: script_output.stdout_lines

@@ -1,0 +1,96 @@
+---
+- name: permit port 3306/tcp
+  firewalld:
+    port: 3306/tcp
+    permanent: yes
+    zone: public
+    state: enabled #present
+  ignore_errors: true
+- name: Firewall reload
+  ansible.builtin.shell:
+    cmd: firewall-cmd --reload
+  ignore_errors: true
+- name: Remove mariaDB
+  apt:
+    name:
+      - "{{ item }}"
+    state: absent
+  with_items:
+    - "mariadb-common"
+    - "mariadb-config"
+    - "mariadb-libs"
+    - "mariadb-connector-c"
+    - "mariadb-connector-c-config"
+- name: Install the mysql packages in Ubuntu 
+  become: true
+  apt:
+    update_cache: yes
+    name:
+      - "{{ item }}"
+    state: latest
+  with_items:
+    - "mysql-server"
+    - "mysql-client"
+    - "python3-pymysql"
+    - "php-mysql"
+
+  notify:
+   - restart mysql
+- name: Start MySQL service
+  service:
+    name: mysql
+    state: started
+    enabled: true
+
+- name: Sets the root password
+  mysql_user:
+    name: "{{ mysql_root_db_user }}"
+    password: "{{ mysql_root_db_pass }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+
+
+# MASTER
+- name: Copy the mysqld.cnf file for Master
+  template:
+    src: "mysql.cnf_id1"
+    dest: "/etc/mysql/mysql.conf.d/mysqld.cnf"
+  notify:
+   - restart mysql
+  when: mysql_repl_role == 'master'
+# SLAVE
+- name:  Copy the my.cnf file for Slave
+  template:
+    src: "mysql.cnf_id2"
+    dest: "/etc/mysql/mysql.conf.d/mysqld.cnf"
+  notify:
+   - restart mysql
+  when: mysql_repl_role == 'slavedb'
+
+
+- name: Copy .my.cnf file with root password credentials
+  template:
+    src: "my.cnf.j2"
+    dest: "~/.my.cnf"
+  notify:
+   - restart mysql
+
+- name: Restart systemctl daemon-reload
+  command: systemctl daemon-reload
+- name: Start the mysql services
+  service:
+    name: "{{ mysql_service }}"
+    state: started
+    enabled: yes
+
+
+
+
+
+
+
+
+
+
+
+
+

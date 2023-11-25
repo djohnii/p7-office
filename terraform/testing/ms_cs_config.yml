@@ -1,0 +1,8 @@
+
+- hosts: test_cs
+  gather_facts: false
+  roles:
+    - { role: config_cs_mysql,
+        mysql_repl_role: test_cs,
+        cs: 192.168.26.137 ,
+        ds: 192.168.26.226 }

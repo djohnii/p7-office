@@ -1,0 +1,8 @@
+%{ for i, name in name_vm }
+  [${name}] 
+  ${name}
+
+  [${name}:vars]
+  ansible_host=${ip_vm[i]}
+  ansible_user=root
+%{ endfor ~}

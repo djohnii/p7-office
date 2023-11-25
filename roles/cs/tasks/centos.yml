@@ -1,0 +1,60 @@
+---
+- name: Download script and run (Centos and RedOS) 
+  block:
+    # - name: Upgrade all packages
+    #   yum:
+    #     name: '*'
+    #     state: latest
+    - name: Download script
+      get_url:
+        url: "{{ url_cs_redhat }}"
+        dest: /tmp/install-RedHat.sh
+        mode: '0644'
+        validate_certs: no
+        force: yes
+    # - name: Pre-installation steps for Centos
+    #   yum:
+    #     name: "firewalld"
+    #     update_cache: yes
+    #     state: latest
+
+    - name: Pre-installation steps for RedOS
+      block:
+        - name: Run command for 7.3.2
+          ansible.builtin.shell: |
+            restorecon -Rv /var/lib/rpm
+            rpmdb --rebuilddb
+
+        - name: Remove of pacheges RedOS
+          yum:
+            name: "{{ item }}"
+            state: absent
+          with_items:
+            - mariadb-common
+            - mariadb-config
+            - mariadb-libs
+            - mariadb-connector-c
+            - mariadb-connector-c-config
+
+        - name: Install curl
+          yum:
+            name: "curl"
+            update_cache: yes
+
+    
+        - name: Remove my.cnf
+          ansible.builtin.file:
+            path: /etc/my.cnf
+            state: absent
+
+        - name: Install dotnet-host
+          ansible.builtin.yum:
+            name: https://packages.microsoft.com/centos/7/prod/Packages/d/dotnet-host-6.0.9-x64.rpm
+            validate_certs: no
+            disable_gpg_check: yes
+
+    - name: Run cs install
+      ansible.builtin.shell:
+        cmd: yes | bash /tmp/install-RedHat.sh
+      # register: runscriptcent
+      ignore_errors: True

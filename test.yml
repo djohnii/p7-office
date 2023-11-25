@@ -1,0 +1,7 @@
+- name: Вывести хосты с ansible_distribution == "RED"
+  hosts: all
+  tasks:
+    - name: Вывести список хостов с ansible_distribution == "RED"
+      debug:
+        msg: "{{ inventory_hostname }}"
+      when: ansible_distribution == "RED" and ansible_distribution_release == "MUROM"

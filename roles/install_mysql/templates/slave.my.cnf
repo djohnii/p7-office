@@ -1,20 +1,15 @@
 [mysqld]
-server_id = 2
-log_bin = mysql-bin
-relay-log = /var/lib/mysql/mysql-relay-bin
-relay-log-index = /var/lib/mysql/mysql-relay-bin.index
-read_only = 1
-
-sql_mode = 'NO_ENGINE_SUBSTITUTION'
-max_connections = 1000
-group_concat_max_len = 2048
-max_allowed_packet = 1048576000
-character_set_server = utf8
-collation_server = utf8_general_ci
+wait_timeout = 900
+interactive_timeout = 900
 default-authentication-plugin = mysql_native_password
-innodb_strict_mode = 0
-
-datadir=/var/lib/mysql
-socket=/var/lib/mysql/mysql.sock
-log-error=/var/log/mysqld.log
-pid-file=/var/run/mysqld/mysqld.pid
+collation_server = utf8_general_ci
+character_set_server = utf8
+max_allowed_packet = 1048576000
+group_concat_max_len = 2048
+max_connections = 1000
+sql_mode = 'NO_ENGINE_SUBSTITUTION'
+pid-file        = /var/run/mysqld/mysqld.pid
+socket          = /var/run/mysqld/mysqld.sock
+datadir         = /var/lib/mysql
+log-error       = /var/log/mysql/error.log
+server-id	 =2

@@ -1,1 +1,34 @@
 ---
+mysql_port: 
+mysql_bind_address: 
+mysql_root_db_pass:
+mysql_db:
+  - name: 
+    replicate: yes
+  - name: 
+    replicate: no
+mysql_users:
+  - name: 
+    pass: 
+    priv: 
+mysql_repl_user:
+  - name: 
+    pass: 
+mysql_repl_role: 
+mysql_db_id: 7
+mysql_sql_mode: STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION
+mysql_add_engine: false
+mysql_engines: []
+mysql_extra_packages_deb: []
+mysql_extra_packages_rh: []
+
+
+
+
+
+MYSQL_PACKAGE_NAME_DEB9: "mysql-apt-config_0.8.24-1_all.deb"
+MYSQL_PACKAGE_NAME: "mysql-apt-config_0.8.24-1_all.deb"
+mysql_pass: "Welcome1"
+packagesAlt:
+  - "mysql"
+  - "libmariadb3"

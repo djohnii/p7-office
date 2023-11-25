@@ -1,7 +1,8 @@
 ---
-mysql_packages:
-  - libselinux-python
-  - mysql-server
-  - MySQL-python
-mysql_service: mysqld
-mysql_conf_dir: "/etc"
+# mysql_packages:
+#   - libselinux-python
+#   - mysql-server
+#   - MySQL-python
+mysql_service: mysql
+mysqld_service: mysqld
+mysql_conf_dir: "/etc/mysql/"

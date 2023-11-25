@@ -1,0 +1,95 @@
+
+---
+- name: Install curl 
+  apt:
+    name: curl
+
+- name: Add repo
+  ansible.builtin.shell:
+    cmd: echo "deb https://download.r7-office.ru/repo/debian squeeze main" | sudo tee /etc/apt/sources.list.d/r7-office.list
+
+- name: Add key
+  ansible.builtin.shell:
+    cmd: curl -s https://download.r7-office.ru/repo/gpgkey/r7-office.gpg.key | sudo apt-key add -
+- name: Update packages
+  apt:
+    # name: "*"
+    update_cache: yes
+    # state: latest
+
+- name: install postgresql 
+  apt:
+    name: postgresql
+
+
+- name: Install rabbitmq-server 
+  apt:
+    name: rabbitmq-server
+
+- name: Install redis-server 
+  apt:
+    name: redis-server
+
+
+- name: Install nginx-extras 
+  apt:
+    name: nginx-extras
+
+- name: create db
+  ansible.builtin.shell:
+    cmd: sudo -i -u postgres psql -c "CREATE DATABASE r7office;"
+
+- name: create user
+  ansible.builtin.shell:
+    cmd: sudo -i -u postgres psql -c "CREATE USER r7office WITH password 'r7office';"
+
+- name: add privileges
+  ansible.builtin.shell:
+    cmd: sudo -i -u postgres psql -c "GRANT ALL privileges ON DATABASE r7office TO r7office;"
+    
+
+- name: select pwd
+  ansible.builtin.shell:
+    cmd: sudo echo r7-office-documentserver-ee ds/db-pwd select r7office | sudo debconf-set-selections
+
+- name: select user
+  ansible.builtin.shell:
+    cmd: sudo echo r7-office-documentserver-ee ds/db-user select r7office | sudo debconf-set-selections
+
+- name: select name db
+  ansible.builtin.shell:
+    cmd: sudo echo r7-office-documentserver-ee ds/db-name select r7office | sudo debconf-set-selections
+
+
+- name: wget url
+  get_url: 
+    url: http://ftp.de.debian.org/debian/pool/contrib/m/msttcorefonts/ttf-mscorefonts-installer_3.7_all.deb
+    dest: /tmp/ttf-mscorefonts-installer_3.7_all.deb
+
+- name: insall fontconfig
+  apt:
+    name: fontconfig
+- name: Install a .deb package
+  ansible.builtin.apt:
+    deb: /tmp/ttf-mscorefonts-installer_3.7_all.deb
+
+
+
+- name: install r7-office-documentserver-ee 
+  ansible.builtin.package:
+    name: r7-office-documentserver-ee
+
+## Добавление лицензии
+# - name: Create a directory /var/www/r7-office/Data/
+#   ansible.builtin.file:
+#     path: /var/www/r7-office/Data/
+#     state: directory
+#     mode: '0755'
+  
+# - name: Copy license
+#   ansible.builtin.copy:
+#     src: 4a49433e-1233-4233-b69e-ff7013d59c2a.lic
+#     dest: /var/www/r7-office/Data/license.lickey
+#     owner: root
+#     group: root
+#     mode: '0666'

@@ -1,0 +1,72 @@
+--- 
+- name: permit port 3306/tcp
+  firewalld:
+    port: 3306/tcp
+    permanent: yes
+    zone: public
+    state: enabled #present
+  ignore_errors: true
+- name: Firewall reload
+  ansible.builtin.shell:
+    cmd: firewall-cmd --reload
+  ignore_errors: true
+- name: Update repo
+  ansible.builtin.apt:
+    update_cache: yes
+- name: Install mysql
+  ansible.builtin.apt:
+    name: 
+      - "mariadb-server"
+      - "mariadb-client"
+      - "python3-pymysql"
+      - "php-mysql"
+- name: started mysqld
+  ansible.builtin.service:
+    name: mysql
+    state: started
+    enabled: yes
+- name: started mysql
+  ansible.builtin.service:
+    name: mysql
+    state: started
+    enabled: yes
+- name: Sets the root password
+  mysql_user:
+    name: "{{ mysql_root_db_user }}"
+    password: "{{ mysql_root_db_pass }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+
+# MASTER
+- name: Copy the mysqld.cnf file for Master
+  template:
+    src: "mysql.cnf_id1"
+    dest: "/etc/mysql/conf.d/mysql.cnf"
+  notify:
+   - restart mysql
+  when: mysql_repl_role == 'master'
+# SLAVE
+- name:  Copy the my.cnf file for Slave
+  template:
+    src: "mysql.cnf_id2"
+    dest: "/etc/mysql/conf.d/mysql.cnf"
+  notify:
+   - restart mysql
+  when: mysql_repl_role == 'slavedb'
+- name: Copy .my.cnf file with root password credentials
+  template:
+    src: "my.cnf.j2"
+    dest: "~/.my.cnf"
+  notify:
+   - restart mysql
+- name: change /etc/mysql/mariadb.conf.d/50-server.cnf
+  replace:
+      path: /etc/mysql/mariadb.conf.d/50-server.cnf 
+      regexp: 'bind-address            = 127.0.0.1' 
+      replace: '#bind-address            = 127.0.0.1'
+- name: Restart systemctl daemon-reload
+  command: systemctl daemon-reload
+- name: Start the mysql services
+  service:
+    name: "{{ mysql_service }}"
+    state: started
+    enabled: yes

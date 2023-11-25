@@ -1,13 +1,13 @@
---- 
-- name: Copy file 1
-  template:
-    src: communityserver-configure.sh.j2
-    dest: /usr/bin/communityserver-configure.sh
-- name: Copy file 2
-  template:
-    src: xmppserver-configure.sh.j2
-    dest: /usr/bin/xmppserver-configure.sh
-- name: run mysql script
-  shell: bash /usr/bin/communityserver-configure.sh
-- name: run mysql script
-  shell: bash /usr/bin/xmppserver-configure.sh
+- include_tasks: deb.yml
+  when:  "'ansible_distribution' == 'Ubuntu' and ('ansible_distribution_version' == '18.04' or 'ansible_distribution_version' == '22.04')"
+- include_tasks: deb.yml
+  when: ansible_os_family == 'Debian'
+
+- include_tasks: astra.yml
+  when: ansible_os_family == 'Astra Linux'
+
+- include_tasks: red.yml
+  when: ansible_distribution == 'RED' and ansible_distribution_release == 'MUROM'
+
+- include_tasks: red.yml
+  when: (ansible_distribution == "CentOS" ) #and ansible_facts['distribution_major_version'] == "7"

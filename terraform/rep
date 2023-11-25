@@ -1,0 +1,22 @@
+if [[ "$DIST" =~ "astralinux"* ]]; then
+        if [[ "$(awk -F. '{ printf("%d%03d%03d%03d", $1,$2,$3,$4); }' <<< $DISTRIB_RELEASE)" -lt "2000000000" ]]; then
+                DIST="debian";
+                DISTRIB_CODENAME="wheezy";
+                REV="8";
+                if [ -f /etc/debian_version ] && [ "$(awk -F'.' '{print $1}' /etc/debian_version)" -ge "10" ]; then
+                        DIST="debian";
+                        DISTRIB_CODENAME="buster";
+                        REV="10";
+                        [ -f /etc/parsec/mswitch.conf ] && sed 's?\(zero_if_notfound:\).*?\1 yes?' -i /etc/parsec/mswitch.conf
+                fi
+        elif [[ "$(awk -F. '{ printf("%d%03d%03d%03d", $1,$2,$3,$4); }' <<< $DISTRIB_RELEASE)" -ge "2000000000" ]]; then
+                DIST="debian";
+                DISTRIB_CODENAME="stretch";
+                REV="9";
+        fi
+
+        rm -dfr /etc/apt/preferences.d/*
+        [ "$DISTRIB_CODENAME" = "buster" ] && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 648ACFD622F3D138 0E98404D386FA1D9 DCC9EFBF77E11517 && \
+        echo "deb https://mirror.yandex.ru/$DIST/ $DISTRIB_CODENAME main contrib non-free" | tee /etc/apt/sources.list.d/$DISTRIB_CODENAME.list || \
+        echo "deb http://archive.debian.org/debian-archive/debian/ $DISTRIB_CODENAME main contrib non-free" | tee /etc/apt/sources.list.d/$DISTRIB_CODENAME.list
+fi

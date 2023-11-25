@@ -1,0 +1,40 @@
+---
+
+
+- name: Download script and run (AstraLinux, Debian and Ubuntu)
+  block:
+
+    - name: Update all packages to their latest version
+      apt:
+        name: "*"
+        state: latest
+        update_cache: yes
+
+    - name: Download script
+      get_url:
+        url: "{{ url_cs_deb }}"
+        dest: /tmp/install-AstraLinux.sh
+        mode: '0644'
+        validate_certs: no
+        force: yes
+
+    - name: Pre-installation
+      apt:
+        name: "{{ packagesDeb }}"
+        state: latest
+
+
+    - name: Run cs install
+      ansible.builtin.shell:
+        cmd: bash /tmp/install-AstraLinux.sh
+      register: runscriptdeb
+
+    - name: Debug runscriptdeb
+      debug:
+        msg: "{{ runscriptdeb }}"
+
+#     - name: Debug runscriptcent
+#       debug:
+#         msg: "{{ runscriptcent }}"
+#     - name: reboot
+#       ansible.builtin.reboot:
