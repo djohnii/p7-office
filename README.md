@@ -48,6 +48,8 @@ ds_node ansible_host=192.168.1.2 ansible_port=22 ansible_user=ssh_user
 master_node ansible_host=192.168.1.3 ansible_port=22 ansible_user=ssh_user
 [slave_db]
 slave_node ansible_host=192.168.1.4 ansible_port=22 ansible_user=ssh_user
+elc]
+elastic_node ansible_host=192.168.1.5  ansible_port=22 ansible_user=ssh_user
 ```
 
 ### Переменные  hosts
@@ -57,6 +59,7 @@ slave_node ansible_host=192.168.1.4 ansible_port=22 ansible_user=ssh_user
 | ds_node | хост, на котором будет установлен документ сервер (оставляем по умолчанию)|
 | master_node | хост, на котором будет установлена база данных mysql master (оставляем по умолчанию) |
 | slave_node | хост, на котором будет установлена база данных mysql svale (оставляем по умолчанию)|
+|elastic_node | хост, на котором будет установлен elasticsearch (оставляем по умолчанию) |
 |ansible_host|ip адрес хоста |
 |ansible_port|порт для подключения через ssh ( по умолчанию 22)|
 |ansible_user|пользователь для подключения по ssh|
@@ -68,7 +71,7 @@ cs: "{{ hostvars[groups['cs'][0]].ansible_host }}"
 ds: "{{ hostvars[groups['ds'][0]].ansible_host }}"  
 ms: "{{ hostvars[groups['slave_db'][0]].ansible_host }}" 
 mm: "{{ hostvars[groups['master_db'][0]].ansible_host }}"
-
+elc: "{{ hostvars[groups['elc'][0]].ansible_host }}"
 mysql_root_db_pass: "<password>"
 mysql_root_db_user: root
 mysql_repl_user:
@@ -95,6 +98,7 @@ DS_psql_pass: r7office
 | ds| ip адрес хоста для документ сервера. Берет значение  ansible_host  из файла inventory/hosts|
 |ms | ip адрес хоста для базы данных (Master). Берет значение  ansible_host  из файла inventory/hosts|
 |mm |ip адрес хоста для базы данных (Slave). Берет значение  ansible_host  из файла inventory/hosts |
+| elc |ip адрес хоста для elasticsearch. Берет значение  ansible_host  из файла inventory/hosts  | 
 |mysql_root_db_pass | пароль от пользователя root для входа в mysql|
 |mysql_root_db_user | пользователь для входа в mysql  |
 | mysql_repl_user| переменные для настройки mysql Master с mysql Slave.<br> name - имя пользователя <br>pass - пароль от пользователя <br> host - ip адрес , с которого разрешен вход под данным пользователем ( если указать % то доступ будет разрешен с любого ip) <br> priv- привелегии пользователя|
